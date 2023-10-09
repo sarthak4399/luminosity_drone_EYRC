@@ -39,7 +39,7 @@ class swift():
 
         # This corresponds to your current position of drone. This value must be updated each time in your whycon callback
         # [x,y,z]
-        self.drone_position = [0.0, 0.0, 0.0]
+        self.drone_position = [-0.03, 0.03, 37.22]
         # [x_setpoint, y_setpoint, z_setpoint]
         # whycon marker at the position of the dummy given in the scene. Make the whycon marker associated with position_to_hold dummy renderable and make changes accordingly
         self.setpoint = [2, 2, 20]
@@ -61,15 +61,15 @@ class swift():
         # self.Ki = [0.01, 0.01, 0.01]
         # self.Kd = [50.0, 50.0, 100.0]
 
-        # self.Kp = [0, 0, 1485]
+        # self.Kp = [36.6, 30.06, 48.42]
         # self.Ki = [0, 0, 0]
-        # self.Kd = [0, 0, 210]
+        # self.Kd = [864.3, 823.5, 626.4]
         # self.Kp = [0, 0, 0]
         # self.Ki = [0, 0, 0]
         # self.Kd = [0, 0, 0]
-        self.Kp = [0, 25, 90]  # final kp****
+        self.Kp = [25, 25, 90]  # final kp****
         self.Ki = [0, 0, 0]  # final ki****
-        self.Kd = [0, 80, 873]  # final kd****
+        self.Kd = [80, 80, 873]  # final kd****
 
         # self.Kp = [36.6, 30.06, 800]
         # self.Ki = [0, 0, 0]
@@ -169,7 +169,7 @@ class swift():
         self.Kd[1] = Pitch.Kd
 
     def roll_set_pid(self, Roll):
-        self.Kp[0] = Roll.Kp
+        self.Kp[0] = (Roll.Kp)
         self.Ki[0] = Roll.Ki
         self.Kd[0] = Roll.Kd
 
@@ -182,7 +182,7 @@ class swift():
 
         self.error[2] = self.drone_position[2]-self.setpoint[2]
         self.error[1] = self.drone_position[1]-self.setpoint[1]
-        self.error[0] = self.drone_position[0]-self.setpoint[0]
+        self.error[0] = self.setpoint[0]-self.drone_position[0]
 
         # print(self.error)
 
@@ -253,10 +253,11 @@ class swift():
         # print("roll drone position  ", self.drone_position[0])
         # print("roll setpoint  ", self.setpoint[0])
 
-        print("SET POINt", self.setpoint[0],
-              self.setpoint[1], self.setpoint[2])
-        print("DRONE POSITION", self.drone_position[0], self.drone_position[1],
-              self.drone_position[2])
+        # print("SET POINt", self.setpoint[0],
+        #       self.setpoint[1], self.setpoint[2])
+
+        # print("DRONE POSITION", self.drone_position[0], self.drone_position[1],
+        #       self.drone_position[2])
 
         if self.cmd.rcRoll > self.max_values[0]:
             self.cmd.rcRoll = self.max_values[0]
@@ -300,4 +301,5 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
 
         swift_drone.pid()
+
         r.sleep()
