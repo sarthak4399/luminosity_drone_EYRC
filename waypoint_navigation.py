@@ -27,6 +27,7 @@ from std_msgs.msg import Float64
 from pid_tune.msg import PidTune
 import rospy
 import time
+import math
 
 
 class swift():
@@ -55,15 +56,16 @@ class swift():
         # self.setpoint[7,0,21]
         # self.setpoint[0,0,21]
         self.setpoints = [
-            [2, 2, 20],
-            [2, 0.0, 23],
+            [0, 0, 23],
+            [2, 0, 23],
             [2, 2, 23],
+            [2, 2, 25],
             [-5, 2, 25],
             [-5, -3, 25],
             [-5, -3, 21],
             [7, -3, 21],
             [7, 0, 21],
-            [0, 0, 21]
+            [0, 0, 19]
         ]
         self.current_setpoint_index = 0
         self.setpoint = self.setpoints[self.current_setpoint_index]
@@ -85,9 +87,9 @@ class swift():
         # self.Kp = [44, 44, 109]
         # self.Ki = [0.66, 0.66, 8]
         # self.Kd = [109, 524, 1286]
-        self.Kp = [71, 30, 80]
-        self.Ki = [0.66, 0.66, 0.2]
-        self.Kd = [247, 247, 873]
+        self.Kp = [5, 30, 90]
+        self.Ki = [0, 0.66, 0.2]
+        self.Kd = [0., 247, 873]
         # self.Kp = [0, 0, 0]
         # self.Ki = [0, 0, 0]
         # self.Kd = [0, 0, 0]
@@ -150,7 +152,6 @@ class swift():
     def arm(self):
 
         self.disarm()
-
         self.cmd.rcRoll = 1500
         self.cmd.rcYaw = 1500
         self.cmd.rcPitch = 1500
@@ -158,7 +159,6 @@ class swift():
         self.cmd.rcAUX4 = 1500
         self.command_pub.publish(self.cmd)  # Publishing /drone_command
         rospy.sleep(1)
-
     # Whycon callback function
     # The function gets executed each time when /whycon node publishes /whycon/poses
 
@@ -182,12 +182,12 @@ class swift():
 
     def pitch_set_pid(self, Pitch):
         self.Kp[1] = Pitch.Kp
-        self.Ki[1] = Pitch.Ki
+        self.Ki[1] = Pitch.Ki * (1/1000)
         self.Kd[1] = Pitch.Kd
 
     def roll_set_pid(self, Roll):
         self.Kp[0] = Roll.Kp
-        self.Ki[0] = Roll.Ki
+        self.Ki[0] = Roll.Ki * (1/1000)
         self.Kd[0] = Roll.Kd
 
     # ----------------------------Define callback function like altitide_set_pid to tune pitch, roll--------------
@@ -195,11 +195,12 @@ class swift():
     # ----------------------------------------------------------------------------------------------------------------------
 
     def pid(self):
+
         # -----------------------------Write the PID algorithm here--------------------------------------------------------------
         self.error[2] = self.drone_position[2]-self.setpoint[2]
         self.error[1] = self.drone_position[1]-self.setpoint[1]
         self.error[0] = self.setpoint[0]-self.drone_position[0]
-        self.tolerance_value = 0.2
+        self.tolerance_value = 1
         #
         if (
             abs(self.error[0]) < self.tolerance_value
@@ -211,8 +212,7 @@ class swift():
                 # If all setpoints are reached, you can choose to reset or stop
                 rospy.loginfo("All setpoints reached!")
                 print("All setpoints reached!")
-                self.disarm()
-                rospy.signal_shutdown("All setpoints reached!")
+
             else:
                 # Switch to the next setpoint
                 self.setpoint = self.setpoints[self.current_setpoint_index]
@@ -331,11 +331,15 @@ class swift():
 if __name__ == '__main__':
 
     swift_drone = swift()
-
+    start_time = time.time()
     # specify rate in Hz based upon your desired PID sampling time, i.e. if desired sample time is 33ms specify rate as 30Hz
     r = rospy.Rate(30)
     while not rospy.is_shutdown():
 
         swift_drone.pid()
-
+        if swift_drone.current_setpoint_index >= len(swift_drone.setpoints):
+            end_time = time.time()  # Record the end time
+            print("All setpoints reached!")
+            print("Total time taken:", end_time - start_time, "seconds")
+            break
         r.sleep()
