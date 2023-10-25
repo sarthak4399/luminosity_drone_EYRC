@@ -67,6 +67,7 @@ class swift():
             [7, 0, 21],
             [0, 0, 19]
         ]
+
         self.current_setpoint_index = 0
         self.setpoint = self.setpoints[self.current_setpoint_index]
         self.setpoint_reached = False
@@ -87,12 +88,19 @@ class swift():
         # self.Kp = [44, 44, 109]
         # self.Ki = [0.66, 0.66, 8]
         # self.Kd = [109, 524, 1286]
-        self.Kp = [5, 30, 90]
-        self.Ki = [0, 0.66, 0.2]
-        self.Kd = [0., 247, 873]
+        # self.Kp = [5, 30, 90]
+        # self.Ki = [0.1, 0.66, 0.2]
+        # self.Kd = [0.1, 247, 873]
         # self.Kp = [0, 0, 0]
         # self.Ki = [0, 0, 0]
         # self.Kd = [0, 0, 0]
+
+        # self.Kp = [18.36, 4.68, 21] # prebest time 112 seconds
+        # self.Ki = [0, 0, 0.218]
+        # self.Kd = [109.8, 26.7, 317]
+        self.Kp = [11.88, 3.6, 22.8]  # current best
+        self.Ki = [0.0024, 0.002, 0.32]
+        self.Kd = [13.2, 19.8, 419.1]
 
         # -----------------------Add other required variables for pid here ----------------------------------------------
 
@@ -100,7 +108,7 @@ class swift():
         self.error = [0, 0, 0]
         self.prev_error = [0, 0, 0]
         self.error_sum = [0, 0, 0]
-        self.max_values = [2000, 2000, 2000]
+        self.max_values = [5000, 5000, 5000]
         self.min_values = [1000, 1000, 1000]
         self.out_roll = 0
         self.out_pitch = 0
@@ -110,7 +118,6 @@ class swift():
         # self.min_values = [1000,1000,1000] corresponding to [pitch, roll, throttle]
         # You can change the upper limit and lower limit accordingly.
         # ----------------------------------------------------------------------------------------------------------
-
         # # This is the sample time in which you need to run pid. Choose any time which you seem fit. Remember the stimulation step time is 50 ms
         # self.sample_time = 0.060 # in seconds
 
@@ -118,7 +125,6 @@ class swift():
         self.command_pub = rospy.Publisher(
             '/drone_command', swift_msgs, queue_size=1)
         # ------------------------Add other ROS Publishers here-----------------------------------------------------
-
         self.alt_error_pub = rospy.Publisher(
             '/alt_error', Float64, queue_size=1)
         self.pitch_error_pub = rospy.Publisher(
@@ -135,9 +141,7 @@ class swift():
         # -------------------------Add other ROS Subscribers here----------------------------------------------------
         rospy.Subscriber('/pid_tuning_pitch', PidTune, self.pitch_set_pid)
         rospy.Subscriber('/pid_tuning_roll', PidTune, self.roll_set_pid)
-
         # ------------------------------------------------------------------------------------------------------------
-
         self.arm()  # ARMING THE DRONE
 
     # Disarming condition of the drone
@@ -174,22 +178,36 @@ class swift():
     # Callback function for /pid_tuning_altitude
     # This function gets executed each time when /tune_pid publishes /pid_tuning_altitude
 
+    # def altitude_set_pid(self, alt):
+    #     # This is just for an example. You can change the ratio/fraction value accordingly
+    #     self.Kp[2] = alt.Kp
+    #     self.Ki[2] = alt.Ki * (1/1000)
+    #     self.Kd[2] = alt.Kd
+
+    # def pitch_set_pid(self, Pitch):
+    #     self.Kp[1] = Pitch.Kp *0.5
+    #     self.Ki[1] = Pitch.Ki * (1/1000)
+    #     self.Kd[1] = Pitch.Kd *0.5
+
+    # def roll_set_pid(self, Roll):
+    #     self.Kp[0] = Roll.Kp *0.5
+    #     self.Ki[0] = Roll.Ki * (1/1000)
+    #     self.Kd[0] = Roll.Kd  *0.5
     def altitude_set_pid(self, alt):
         # This is just for an example. You can change the ratio/fraction value accordingly
-        self.Kp[2] = alt.Kp
-        self.Ki[2] = alt.Ki * (1/1000)
-        self.Kd[2] = alt.Kd
+        self.Kp[2] = alt.Kp * 0.06
+        self.Ki[2] = alt.Ki * 0.0008
+        self.Kd[2] = alt.Kd * 0.3
 
     def pitch_set_pid(self, Pitch):
-        self.Kp[1] = Pitch.Kp
-        self.Ki[1] = Pitch.Ki * (1/1000)
-        self.Kd[1] = Pitch.Kd
+        self.Kp[1] = Pitch.Kp * 0.06
+        self.Ki[1] = Pitch.Ki * 0.0008
+        self.Kd[1] = Pitch.Kd * 0.3
 
     def roll_set_pid(self, Roll):
-        self.Kp[0] = Roll.Kp
-        self.Ki[0] = Roll.Ki * (1/1000)
-        self.Kd[0] = Roll.Kd
-
+        self.Kp[0] = Roll.Kp * 0.06
+        self.Ki[0] = Roll.Ki * 0.0008
+        self.Kd[0] = Roll.Kd * 0.3
     # ----------------------------Define callback function like altitide_set_pid to tune pitch, roll--------------
 
     # ----------------------------------------------------------------------------------------------------------------------
@@ -200,8 +218,8 @@ class swift():
         self.error[2] = self.drone_position[2]-self.setpoint[2]
         self.error[1] = self.drone_position[1]-self.setpoint[1]
         self.error[0] = self.setpoint[0]-self.drone_position[0]
-        self.tolerance_value = 1
-        #
+        self.tolerance_value = 0.2 
+
         if (
             abs(self.error[0]) < self.tolerance_value
             and abs(self.error[1]) < self.tolerance_value
