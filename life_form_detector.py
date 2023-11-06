@@ -1,24 +1,5 @@
 #!/usr/bin/env python3
 
-'''
-
-This python file runs a ROS-node of name drone_control which holds the position of Swift-Drone on the given dummy.
-This node publishes and subsribes the following topics:
-
-		PUBLICATIONS			SUBSCRIPTIONS
-		/drone_command			/whycon/poses
-		/alt_error				/pid_tuning_altitude
-		/pitch_error			/pid_tuning_pitch
-		/roll_error				/pid_tuning_roll
-					
-								
-
-Rather than using different variables, use list. eg : self.setpoint = [1,2,3], where index corresponds to x,y,z ...rather than defining self.x_setpoint = 1, self.y_setpoint = 2
-CODE MODULARITY AND TECHNIQUES MENTIONED LIKE THIS WILL HELP YOU GAINING MORE MARKS WHILE CODE EVALUATION.	
-'''
-
-# Importing the required libraries
-
 from swift_msgs.msg import *
 from geometry_msgs.msg import PoseArray
 from std_msgs.msg import Int16
@@ -42,145 +23,18 @@ class swift():
 
     def __init__(self):
 
-        # initializing ros node with name drone_control
         rospy.init_node('drone_control')
 
-        # This corresponds to your current position of drone. This value must be updated each time in your whycon callback
-        # [x,y,z]
-        # self.drone_position = [-0.03, 0.03, 37.22]
         self.drone_position = [0.0, 0.0, 0.0]
-        # [x_setpoint, y_setpoint, z_setpoint]
-        # whycon marker at the position of the dummy given in the scene. Make the whycon marker associated with position_to_hold dummy renderable and make changes accordingly
-        # self.setpoint = [2, 2, 20]
-        # self.setpoint = [0.0, 0.0, 23]
-        # self.setpoint = [2, 0.0, 23]
-        # self.setpoint = [2, 2, 23]
-        # self.setpoint = [2, 2, 25]
-        # self.setpoint = [-5, 2, 25]
-        # self.setpoint[-5,-3,25]
-        # self.setpoint[-5,-3,21]
-        # self.setpoint[7,-3,21]
-        # self.setpoint[7,0,21]
-        # self.setpoint[0,0,21]
-        # self.setpoints = [
-        #     [0, 0, 23],
-        #     [2, 0, 23],
-        #     [2, 2, 23],
-        #     [2, 2, 25],
-        #     [-5, 2, 25],
-        #     [-5, -3, 25],
-        #     [-5, -3, 21],
-        #     [7, -3, 21],
-        #     [7, 0, 21],
-        #     [0, 0, 19]
-        # ]
-        self.setpoints = [
-        #     [0,0,23],
-        #     [0,1,23],
-        #     [0,2,23],
-        #     [0,3,23],
-        #     [0,4,23],
-        #     [0,5,23],
-        #     [0,6,23],
-        #     [0,7,23],
-        #     [0,8,23],
-            # [0,-1,23],
-            # [0,-2,23],
-            # [0,-3,23],
-            # [0,-4,23],
-            # [0,-5,23],
-            # [0,-6,23],
-            # [0,-7,23],
-            # [0,-8,23],
-            # [1,0,23],
-            # [2,0,23],
-            # [3,0,23],
-            # [4,0,23],
-            # [5,0,23],
-            # [6,0,23],
-            # [7,0,23],
-            # [8,0,23],
-
-
-            # [-1,0,23],
-            # [-2,0,23],
-            # [-3,0,23],
-            # [-4,0,23],
-            # [-5,0,23],
-            # [-6,0,23],
-            # [-7,0,23],
-            # [-8,0,23],
-
-
-            #  Top left digonal  Q1 
-            [0,0,23],
-            [-1,-1,23],
-            [-3,-3,23],
-            [-5,-5,23],
-            [-7,-7,23],
-
-            #Top  right digonal Q2
-          
-            [0,0,23],
-            [1,-1,23],
-            [3,-3,23],
-            [5,-5,23],
-            [7,-7,23],
-            
-            
-
-            
-            #Bottom left digonal Q3
-     
-            
-            [0,0,23],
-            [-1,1,23],
-            [-3,3,23],
-            [-5,5,23],
-            [-7,7,23],
-
-            #Bottom right digonal Q4
-            
-            
-            [0,0,23],
-            [1,1,23],
-            [3,3,23],
-            [5,5,23],
-            [7,7,23]
-    ] 
-    
-        # self.setpoints = []
-        # start_point = [0, 0, 23]
-        # self.setpoints.append(start_point)
-
-        # for y in range(8):
-        #     self.setpoints.append([0, y, 23])
-
-        #     if y % 2 == 0:
-        #         for x in range(8):
-        #             self.setpoints.append([x, y, 23])
-        #     else:
-        #         for x in range(7, -1, -1):
-        #             self.setpoints.append([x, y, 23])
-
-        # for y in range(1, 9):
-        #     self.setpoints.append([0, -y, 23])
-
-        #     if y % 2 == 0:
-        #         for x in range(8):
-        #             self.setpoints.append([x, -y, 23])
-        #     else:
-        #         for x in range(7, -1, -1):
-        #             self.setpoints.append([x, -y, 23])
-
-        # Add the return path to the starting point
-        # self.setpoints.append(start_point)
+        self.setpoints = [[1, -1, 23], [3, -3, 23], [6, -4, 23], [7, -7, 23]]
+        # self.setpoints = [[1, 1, 23], [3, 3, 23], [6, 4, 23], [7, 7, 23]]
+        # self.setpoints = [[-1, 1, 23], [-3, 3, 23], [-6, 4, 23], [-7, 7, 23]]
+        # self.setpoints = [[-1, -1, 23], [-3, -3, 23], [-6, -4, 23], [-7, -7, 23]]
 
         self.current_setpoint_index = 0
         self.setpoint = self.setpoints[self.current_setpoint_index]
         self.setpoint_reached = False
 
-        # Declaring a cmd of message type swift_msgs and initializing values
         self.cmd = swift_msgs()
         self.cmd.rcRoll = 1500
         self.cmd.rcPitch = 1500
@@ -191,28 +45,10 @@ class swift():
         self.cmd.rcAUX3 = 1500
         self.cmd.rcAUX4 = 1500
 
-        # initial setting of Kp, Kd and ki for [roll, pitch, throttle]. eg: self.Kp[2] corresponds to Kp value in throttle axis
-        # after tuning and computing corresponding PID parameters, change the parameters
-        # self.Kp = [44, 44, 109]
-        # self.Ki = [0.66, 0.66, 8]
-        # self.Kd = [109, 524, 1286]
-        # self.Kp = [5, 30, 90]
-        # self.Ki = [0.1, 0.66, 0.2]
-        # self.Kd = [0.1, 247, 873]
-        # self.Kp = [0, 0, 0]
-        # self.Ki = [0, 0, 0]
-        # self.Kd = [0, 0, 0]
-
-        # self.Kp = [18.36, 4.68, 21] # prebest time 112 seconds
-        # self.Ki = [0, 0, 0.218]
-        # self.Kd = [109.8, 26.7, 317]
-        self.Kp = [11.88, 3.6, 22.8]  # current best
+        self.Kp = [11.88, 3.6, 22.8]  
         self.Ki = [0.0024, 0.002, 0.32]
         self.Kd = [13.2, 19.8, 419.1]
 
-        # -----------------------Add other required variables for pid here ----------------------------------------------
-
-        # ------------------------Define variables for storing error in each axis----------------------------------------------
         self.error = [0, 0, 0]
         self.prev_error = [0, 0, 0]
         self.error_sum = [0, 0, 0]
@@ -222,57 +58,32 @@ class swift():
         self.out_pitch = 0
         self.out_throttle = 0
 
-        # Hint : Add variables for storing previous errors in each axis, like self.prev_error = [0,0,0] where corresponds to [pitch, roll, throttle]		#		 Add variables for limiting the values like self.max_values = [2000,2000,2000] corresponding to [roll, pitch, throttle]
-        # self.min_values = [1000,1000,1000] corresponding to [pitch, roll, throttle]
-        # You can change the upper limit and lower limit accordingly.
-        # ----------------------------------------------------------------------------------------------------------
-        # # This is the sample time in which you need to run pid. Choose any time which you seem fit. Remember the stimulation step time is 50 ms
-        # self.sample_time = 0.060 # in seconds
-
-        # Publishing /drone_command, /alt_error, /pitch_error, /roll_error
-        self.command_pub = rospy.Publisher(
-            '/drone_command', swift_msgs, queue_size=1)
-        # ------------------------Add other ROS Publishers here-----------------------------------------------------
-        self.alt_error_pub = rospy.Publisher(
-            '/alt_error', Float64, queue_size=1)
-        self.pitch_error_pub = rospy.Publisher(
-            '/pitch_error', Float64, queue_size=1)
-        self.roll_error_pub = rospy.Publisher(
-            '/roll_error', Float64, queue_size=1)
+        self.command_pub = rospy.Publisher('/drone_command', swift_msgs, queue_size=1)
+        self.alt_error_pub = rospy.Publisher('/alt_error', Float64, queue_size=1)
+        self.pitch_error_pub = rospy.Publisher('/pitch_error', Float64, queue_size=1)
+        self.roll_error_pub = rospy.Publisher('/roll_error', Float64, queue_size=1)
+        self.image_pub = rospy.Publisher('/image', Int64, queue_size=1)
+        self.location_pub = rospy.Publisher('/astrobiolocation', Float64, queue_size=1)
         
-        self.image_pub = rospy.Publisher(
-            '/image', Int64, queue_size=1)
-        self.location_pub = rospy.Publisher(
-            '/astrobiolocation', Int64, queue_size=1)
-
-    # -----------------------------------------------------------------------------------------------------------
-
-        # Subscribing to /whycon/poses, /pid_tuning_altitude, /pid_tuning_pitch, pid_tuning_roll
         rospy.Subscriber('whycon/poses', PoseArray, self.whycon_callback)
-        rospy.Subscriber('/pid_tuning_altitude',
-                         PidTune, self.altitude_set_pid)
-        # -------------------------Add other ROS Subscribers here----------------------------------------------------
+        rospy.Subscriber('/pid_tuning_altitude',PidTune, self.altitude_set_pid)
         rospy.Subscriber('/pid_tuning_pitch', PidTune, self.pitch_set_pid)
         rospy.Subscriber('/pid_tuning_roll', PidTune, self.roll_set_pid)
-        rospy.Subscriber("/swift/camera_rgb/image_raw", Image, self.callback) 
-        # rospy.Subscriber("/astrobiolocation", Int64, self.astrobilocation)
-        # ------------------------------------------------------------------------------------------------------------
-        self.arm()  # ARMING THE DRONE
+        rospy.Subscriber("/swift/camera_rgb/image_raw", Image, self.callback)
 
+        self.arm()  
 
     def callback(self, data):
         cv2_img = CvBridge().imgmsg_to_cv2(data, "bgr8")
         img_data = np.array(cv2_img, dtype=np.uint8)
         allien_found_flag = False
-
         gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)
         cv2.waitKey(3)
         blurred = cv2.GaussianBlur(gray, (11, 11), 0)
         thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)[1]
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
         img_with_contours = img_data.copy()  
-
+        curren_pos = [round(self.drone_position[0]), round(self.drone_position[1]),round(self.drone_position[2])]
         for i, contour in enumerate(contours):
             M = cv2.moments(contour)
             if M["m00"] != 0:
@@ -280,43 +91,18 @@ class swift():
                 cY = int(M["m01"] / M["m00"])
             else:
                 cX, cY = 0, 0
-
-            # Draw the contour in green on the image
             cv2.drawContours(img_with_contours, [contour], -1, (0, 0, 255), 2)
             cv2.circle(img_with_contours, (cX, cY), 7, (0, 255, 0), -1)
+            cv2.putText(img_with_contours, f"Centroid #{i + 1}", (cX - 20, cY - 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            print("Contour coordinates: ", cX, cY)
 
-            
-        if len(contours) >= 2:  # If multiple contours are found, capture and save the image
-            
+        if len(contours) >=3 or len(contours) == 1: 
+            allien_count = len(contours)
+            print("Allien found at: ", self.setpoint, "with count: ", allien_count)
             image_filename = f"contour_image_with_multiple_contours.jpg"
             cv2.imwrite(image_filename, img_with_contours)
-            allien_found_flag = True
-            self.go_to_research_station()
-            
-        # Publish the centroid coordinates
-        for i, contour in enumerate(contours):
-            M = cv2.moments(contour)
-            if M["m00"] != 0:
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
-            else:
-                cX, cY = 0, 0
-            self.location_pub.publish(cX)
-            self.location_pub.publish(cY)
 
-            print("Centroid coordinates: ", cX, cY)
-            print("Allien found flag: ", allien_found_flag)
-
-    def go_to_research_station(self):
-        self.setpoint = [[0,0,23],[11, 11, 37]]
-        self.setpoints = self.setpoint
-        self.current_setpoint_index = 0
-        self.setpoint = self.setpoints[self.current_setpoint_index]
-        self.current_setpoint_index += 1    
-        self.setpoint_reached = False
-        self.pid()
-        pass
-    
     def disarm(self):
         self.cmd.rcAUX4 = 1100
         self.command_pub.publish(self.cmd)
@@ -336,9 +122,9 @@ class swift():
         self.drone_position[0] = msg.poses[0].position.x
         self.drone_position[1] = msg.poses[0].position.y
         self.drone_position[2] = msg.poses[0].position.z
+        print("Drone position: ", msg.poses[0].position.x, msg.poses[0].position.y, msg.poses[0].position.z)
 
     def altitude_set_pid(self, alt):
-        
         self.Kp[2] = alt.Kp * 0.06
         self.Ki[2] = alt.Ki * 0.0008
         self.Kd[2] = alt.Kd * 0.3
@@ -352,15 +138,12 @@ class swift():
         self.Kp[0] = Roll.Kp * 0.06
         self.Ki[0] = Roll.Ki * 0.0008
         self.Kd[0] = Roll.Kd * 0.3
-    
 
     def pid(self):
-
         self.error[2] = self.drone_position[2]-self.setpoint[2]
         self.error[1] = self.drone_position[1]-self.setpoint[1]
         self.error[0] = self.setpoint[0]-self.drone_position[0]
-        self.tolerance_value = 0.2 
-
+        self.tolerance_value =0.2
         if (
             abs(self.error[0]) < self.tolerance_value
             and abs(self.error[1]) < self.tolerance_value
@@ -368,14 +151,13 @@ class swift():
         ):
             self.current_setpoint_index += 1
             if self.current_setpoint_index >= len(self.setpoints):
-                
                 rospy.loginfo("All setpoints reached!")
                 print("All setpoints reached!")
             else:
-       
                 self.setpoint = self.setpoints[self.current_setpoint_index]
                 print("Switching to next setpoint: ", self.setpoint)
                 self.setpoint_reached = False
+    
 
         p_term_x = self.Kp[0] * self.error[0]
         p_term_y = self.Kp[1] * self.error[1]
@@ -425,14 +207,16 @@ class swift():
         self.pitch_error_pub.publish(self.error[1])
         self.roll_error_pub.publish(self.error[0])
 
-
+        self.command_pub.publish(self.cmd)
+        self.alt_error_pub.publish(self.error[2])
+        self.pitch_error_pub.publish(self.error[1])
+        self.roll_error_pub.publish(self.error[0])
+        
 if __name__ == '__main__':
-
     swift_drone = swift()
     start_time = time.time()
     r = rospy.Rate(30)
     while not rospy.is_shutdown():
-
         swift_drone.pid()
         if swift_drone.current_setpoint_index >= len(swift_drone.setpoints):
             end_time = time.time() 
